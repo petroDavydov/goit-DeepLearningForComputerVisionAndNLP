@@ -209,3 +209,8 @@ __marimo__/
 # Datasets
 /SIGNS_dataset
 /Module_3_Topic_6_hymenoptera_data
+/intel_image_classification
+
+# Model
+best_model_1.pth
+best_model_resnet.pth
