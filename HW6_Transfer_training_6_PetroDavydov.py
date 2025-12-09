@@ -400,3 +400,5 @@ for epoch in range(num_epochs):
     if val_loss < best_val_loss:
         best_val_loss = val_loss
         torch.save(model_resnet.state_dict(), 'best_model_resnet.pth')
+
+

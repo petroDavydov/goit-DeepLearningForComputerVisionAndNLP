@@ -214,3 +214,9 @@ __marimo__/
 # Model
 best_model_1.pth
 best_model_resnet.pth
+# -----topic 7 detect object ----
+/dataObjectDetect
+/runs
+/data.yaml
+/yolov9e.onnx
+/yolov9e.pt
