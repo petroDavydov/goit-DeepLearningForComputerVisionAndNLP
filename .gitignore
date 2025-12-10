@@ -218,5 +218,6 @@ best_model_resnet.pth
 /dataObjectDetect
 /runs
 /data.yaml
-/yolov9e.onnx
-/yolov9e.pt
+yolov9e.onnx
+yolov9e.pt
+yolo11n.pt
