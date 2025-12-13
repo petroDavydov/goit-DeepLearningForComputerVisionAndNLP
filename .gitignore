@@ -222,3 +222,8 @@ best_model_resnet.pth
 /topic_7-conspect-dataObjectDetect/yolov9e.pt
 /topic_7-conspect-dataObjectDetect/yolo11n.pt
 
+# -----topic 8 autocoders ----
+
+/topic_8/data
+
+
