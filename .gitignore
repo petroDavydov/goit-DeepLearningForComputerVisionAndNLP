@@ -225,5 +225,14 @@ best_model_resnet.pth
 # -----topic 8 autocoders ----
 
 /topic_8/data
+/topic_8/homework/indoreObjectDetection
+
+# ----- topic 8 homwork ---------
+
+/topic_8/homework/indoreObjectDetection
+/topic_8/homework/runs_indoor/
+/topic_8/homework/yolo11n.pt
+/topic_8/homework/yolov9s.pt
+
 
 
