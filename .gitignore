@@ -234,5 +234,6 @@ best_model_resnet.pth
 /topic_8/homework/yolo11n.pt
 /topic_8/homework/yolov9s.pt
 
-
-
+# ----------dpnlp---------------------
+/topic_9_data_preparation_in_natural_lanuage_processing/Reviews.csv
+/topic_9_data_preparation_in_natural_lanuage_processing/distilbert_finetuned_amazon
