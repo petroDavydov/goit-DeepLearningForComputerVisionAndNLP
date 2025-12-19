@@ -237,3 +237,7 @@ best_model_resnet.pth
 # ----------dpnlp---------------------
 /topic_9_data_preparation_in_natural_lanuage_processing/Reviews.csv
 /topic_9_data_preparation_in_natural_lanuage_processing/distilbert_finetuned_amazon
+
+# ------------NLP---------------------
+/topic_10_word_embeddings/homework10/Reviews.csv
+/topic_10_word_embeddings/homework10/spam.csv
