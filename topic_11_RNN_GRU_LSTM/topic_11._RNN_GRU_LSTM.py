@@ -1,1 +1,487 @@
-{"metadata":{"kernelspec":{"language":"python","display_name":"Python 3","name":"python3"},"language_info":{"name":"python","version":"3.12.12","mimetype":"text/x-python","codemirror_mode":{"name":"ipython","version":3},"pygments_lexer":"ipython3","nbconvert_exporter":"python","file_extension":".py"},"kaggle":{"accelerator":"none","dataSources":[{"sourceId":94327,"sourceType":"datasetVersion","datasetId":50445}],"dockerImageVersionId":31234,"isInternetEnabled":true,"language":"python","sourceType":"notebook","isGpuEnabled":false}},"nbformat_minor":4,"nbformat":4,"cells":[{"source":"<a href=\"https://www.kaggle.com/code/arturshopengauer/topic-11-rnn-gru-lstm-keggle?scriptVersionId=288021175\" target=\"_blank\"><img align=\"left\" alt=\"Kaggle\" title=\"Open in Kaggle\" src=\"https://kaggle.com/static/images/open-in-kaggle.svg\"></a>","metadata":{},"cell_type":"markdown"},{"cell_type":"code","source":"# This Python 3 environment comes with many helpful analytics libraries installed\n# It is defined by the kaggle/python Docker image: https://github.com/kaggle/docker-python\n# For example, here's several helpful packages to load\n\nimport numpy as np # linear algebra\nimport pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)\n\n# Input data files are available in the read-only \"../input/\" directory\n# For example, running this (by clicking run or pressing Shift+Enter) will list all files under the input directory\n\nimport os\nfor dirname, _, filenames in os.walk('/kaggle/input'):\n    for filename in filenames:\n        print(os.path.join(dirname, filename))\n\n# You can write up to 20GB to the current directory (/kaggle/working/) that gets preserved as output when you create a version using \"Save & Run All\" \n# You can also write temporary files to /kaggle/temp/, but they won't be saved outside of the current session","metadata":{"_uuid":"8f2839f25d086af736a60e9eeb907d3b93b6e0e5","_cell_guid":"b1076dfc-b9ad-4769-8c92-a6c4dae69d19","trusted":true,"execution":{"iopub.status.busy":"2025-12-23T13:38:59.042023Z","iopub.execute_input":"2025-12-23T13:38:59.042255Z","iopub.status.idle":"2025-12-23T13:39:00.05882Z","shell.execute_reply.started":"2025-12-23T13:38:59.042222Z","shell.execute_reply":"2025-12-23T13:39:00.058124Z"}},"outputs":[{"name":"stdout","text":"/kaggle/input/conll003-englishversion/valid.txt\n/kaggle/input/conll003-englishversion/metadata\n/kaggle/input/conll003-englishversion/test.txt\n/kaggle/input/conll003-englishversion/train.txt\n","output_type":"stream"}],"execution_count":1},{"cell_type":"markdown","source":"# **Завантаження необхідних бібліотек**","metadata":{}},{"cell_type":"code","source":"import os\nimport gc\nimport math\nimport random\nfrom collections import defaultdict\n\nimport pandas as pd\nimport numpy as np\n\nimport matplotlib.pyplot as plt\n\nimport torch\nfrom torch.utils.data import Dataset, DataLoader\nimport torch.nn as nn\nfrom torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence\n\nfrom torch.optim import Adam\nfrom tqdm import tqdm_notebook as tqdm\n\nfrom sklearn.metrics import classification_report, f1_score\n\nimport warnings\nwarnings.filterwarnings('ignore')","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2025-12-23T13:39:00.060579Z","iopub.execute_input":"2025-12-23T13:39:00.06098Z","iopub.status.idle":"2025-12-23T13:39:04.76057Z","shell.execute_reply.started":"2025-12-23T13:39:00.06093Z","shell.execute_reply":"2025-12-23T13:39:04.760008Z"}},"outputs":[],"execution_count":2},{"cell_type":"markdown","source":"Визначимо шлях до даних і пристрій, на якому будемо проводити розрахунки.","metadata":{}},{"cell_type":"code","source":"data_path = '/kaggle/input/conll003-englishversion/'\n\ndevice = torch.device(\"cuda\" if torch.cuda.is_available() else \"cpu\")\n","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2025-12-23T13:39:04.761355Z","iopub.execute_input":"2025-12-23T13:39:04.761736Z","iopub.status.idle":"2025-12-23T13:39:04.845882Z","shell.execute_reply.started":"2025-12-23T13:39:04.761712Z","shell.execute_reply":"2025-12-23T13:39:04.845156Z"}},"outputs":[],"execution_count":3},{"cell_type":"markdown","source":"будемо зчитувати тільки елементи на позиції 0 — слова — і 3 — мітки іменованих сутностей. У коді це буде відображатися так: sentences.append((l[0], l[3].strip('\\\\n'))).","metadata":{}},{"cell_type":"code","source":"def load_sentences(filepath):\n    final = []\n    sentences = []\n    with open(filepath, 'r') as f:\n        for line in f.readlines():\n            if (line == ('-DOCSTART- -X- -X- O\\\\n') or line == '\\n'):\n                if len(sentences) > 0:\n                    final.append(sentences)\n                    sentences = []\n            else:\n                l = line.split(' ')\n                sentences.append((l[0], l[3].strip('\\n')))\n    return final\n    \ntrain_sents = load_sentences(data_path + 'train.txt')\ntest_sents = load_sentences(data_path + 'test.txt')\nval_sents = load_sentences(data_path + 'valid.txt')\n\ntrain_sents[:3]","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2025-12-23T13:39:04.846934Z","iopub.execute_input":"2025-12-23T13:39:04.847318Z","iopub.status.idle":"2025-12-23T13:39:05.093614Z","shell.execute_reply.started":"2025-12-23T13:39:04.847289Z","shell.execute_reply":"2025-12-23T13:39:05.093027Z"}},"outputs":[{"execution_count":4,"output_type":"execute_result","data":{"text/plain":"[[('-DOCSTART-', 'O')],\n [('EU', 'B-ORG'),\n  ('rejects', 'O'),\n  ('German', 'B-MISC'),\n  ('call', 'O'),\n  ('to', 'O'),\n  ('boycott', 'O'),\n  ('British', 'B-MISC'),\n  ('lamb', 'O'),\n  ('.', 'O')],\n [('Peter', 'B-PER'), ('Blackburn', 'I-PER')]]"},"metadata":{}}],"execution_count":4},{"cell_type":"markdown","source":"Визначимо список міток класів і закодуємо їх для чисельного представлення.\n\n","metadata":{}},{"cell_type":"code","source":"ner_labels = ['O', 'B-PER', 'I-PER', 'B-ORG', 'I-ORG', 'B-LOC', 'I-LOC', 'B-MISC', 'I-MISC']\nid2label = {str(i): label for i, label in enumerate(ner_labels)}\nlabel2id = {value: int(key) for key, value in id2label.items()}\n","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2025-12-23T13:39:05.094474Z","iopub.execute_input":"2025-12-23T13:39:05.094712Z","iopub.status.idle":"2025-12-23T13:39:05.098868Z","shell.execute_reply.started":"2025-12-23T13:39:05.094693Z","shell.execute_reply":"2025-12-23T13:39:05.098238Z"}},"outputs":[],"execution_count":5},{"cell_type":"markdown","source":"Представимо наші завантажені речення як словник, де під ключем text будуть зберігатися наші речення, а під ключем label — відповідні мітки іменованих сутностей.","metadata":{}},{"cell_type":"code","source":"def get_df(samples):\n    df,label = [], []\n    for lines in samples:\n        cur_line, cur_label = list(zip(*lines))\n        df.append(list(cur_line))\n        label.append([label2id[i] for i in cur_label])\n    return {'text':df, 'label':label}\n    \n    \ntrain_df = get_df(train_sents)\ntest_df = get_df(test_sents)\nval_df = get_df(val_sents)","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2025-12-23T13:39:05.099834Z","iopub.execute_input":"2025-12-23T13:39:05.100143Z","iopub.status.idle":"2025-12-23T13:39:05.30129Z","shell.execute_reply.started":"2025-12-23T13:39:05.100113Z","shell.execute_reply":"2025-12-23T13:39:05.300751Z"}},"outputs":[],"execution_count":6},{"cell_type":"markdown","source":"Для подальшої роботи з даними нам потрібно представити їх у чисельній формі.\n\nСпочатку побудуємо словник. Для цього спершу підрахуємо кількість появи кожного слова в корпусі.","metadata":{}},{"cell_type":"code","source":"word_dict = defaultdict(int)\n\nfor line in train_df['text']:\n    for word in line:\n        word_dict[word] += 1","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2025-12-23T13:39:05.303614Z","iopub.execute_input":"2025-12-23T13:39:05.304105Z","iopub.status.idle":"2025-12-23T13:39:05.356132Z","shell.execute_reply.started":"2025-12-23T13:39:05.304083Z","shell.execute_reply":"2025-12-23T13:39:05.355394Z"}},"outputs":[],"execution_count":7},{"cell_type":"markdown","source":"Ми не будемо використовувати слова, які дуже рідко з’являються, для тренування. Таким чином, ми зменшимо кількість неінформативних ознак у наборі даних.","metadata":{}},{"cell_type":"code","source":"lower_freq_word = []\nfor k,v in word_dict.items():\n    if v < 2:\n        lower_freq_word.append(k)\n\nfor word in lower_freq_word:\n    del word_dict[word]","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2025-12-23T13:39:05.357074Z","iopub.execute_input":"2025-12-23T13:39:05.357358Z","iopub.status.idle":"2025-12-23T13:39:05.366784Z","shell.execute_reply.started":"2025-12-23T13:39:05.357329Z","shell.execute_reply":"2025-12-23T13:39:05.366142Z"}},"outputs":[],"execution_count":8},{"cell_type":"markdown","source":"Додамо до словника два спеціальні токени.\nПерший токен <UNK> позначатиме всі слова, які не присутні у словнику, так звані Out Of Vocabulary words, OOV words.\nДругий токен <PAD> позначає падинг (padding).","metadata":{}},{"cell_type":"code","source":"word_dict['<UNK>'] = -1\nword_dict['<PAD>'] = -2\n","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2025-12-23T13:39:05.367673Z","iopub.execute_input":"2025-12-23T13:39:05.367988Z","iopub.status.idle":"2025-12-23T13:39:05.378083Z","shell.execute_reply.started":"2025-12-23T13:39:05.367943Z","shell.execute_reply":"2025-12-23T13:39:05.377533Z"}},"outputs":[],"execution_count":9},{"cell_type":"markdown","source":"створюємо словник, який буде містити слово та його індекс. Ми будемо використовувати цей словник, щоб представити наші речення в числовому вигляді для подальшої обробки нейронною мережею.","metadata":{}},{"cell_type":"code","source":"word2id = {}\n\nfor idx, word in enumerate(word_dict.keys()):\n  word2id[word] = idx","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2025-12-23T13:39:05.37891Z","iopub.execute_input":"2025-12-23T13:39:05.379144Z","iopub.status.idle":"2025-12-23T13:39:05.392537Z","shell.execute_reply.started":"2025-12-23T13:39:05.379126Z","shell.execute_reply":"2025-12-23T13:39:05.391909Z"}},"outputs":[],"execution_count":10},{"cell_type":"markdown","source":"**Dataset і DataLoader****","metadata":{}},{"cell_type":"code","source":"def prepare_sequence(seq, to_ix):\n    idxs = []\n    for w in seq:\n        if w in to_ix.keys():\n            idxs.append(to_ix[w])\n        else:\n            idxs.append(to_ix['<UNK>'])\n    return idxs","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2025-12-23T13:39:05.393353Z","iopub.execute_input":"2025-12-23T13:39:05.393605Z","iopub.status.idle":"2025-12-23T13:39:05.404099Z","shell.execute_reply.started":"2025-12-23T13:39:05.393574Z","shell.execute_reply":"2025-12-23T13:39:05.403423Z"}},"outputs":[],"execution_count":11},{"cell_type":"markdown","source":"Опишемо клас Dataset, необхідний для абстракції та організації даних під час навчання моделі. Він дозволяє легко керувати даними, завантажувати їх і забезпечує доступ до окремих прикладів даних і їхніх міток.","metadata":{}},{"cell_type":"code","source":"class CoNLLDataset(Dataset):\n    def __init__(self, df):\n        self.texts = df['text']\n        self.labels = df['label']\n\n    def __len__(self):\n        return len(self.texts)\n\n    def __getitem__(self, item):\n        inputs = prepare_sequence(self.texts[item], word2id)\n        label = self.labels[item]\n        return {\n            'input_ids': inputs,\n            'labels': label\n        }","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2025-12-23T13:39:05.404836Z","iopub.execute_input":"2025-12-23T13:39:05.405124Z","iopub.status.idle":"2025-12-23T13:39:05.41595Z","shell.execute_reply.started":"2025-12-23T13:39:05.405076Z","shell.execute_reply":"2025-12-23T13:39:05.415309Z"}},"outputs":[],"execution_count":12},{"cell_type":"markdown","source":"Для тренування поточної моделі нам необхідно визначити collate-функцію","metadata":{}},{"cell_type":"code","source":"class Collate:\n    def __init__(self, train):\n        self.train = train\n\n    def __call__(self, batch):\n        output = dict()\n        output[\"input_ids\"] = [sample[\"input_ids\"] for sample in batch]\n        if self.train:\n            output[\"labels\"] = [sample[\"labels\"] for sample in batch]\n\n        # calculate max token length of this batch\n        batch_max = max([len(ids) for ids in output[\"input_ids\"]])\n\n        # add padding\n\n        output[\"input_ids\"] = [s + (batch_max - len(s)) * [word2id['<PAD>']] for s in output[\"input_ids\"]]\n        if self.train:\n            output['labels'] = [s + (batch_max - len(s)) * [-100] for s in output[\"labels\"]]\n\n        # convert to tensors\n        output[\"input_ids\"] = torch.tensor(output[\"input_ids\"], dtype=torch.long)\n        if self.train:\n            output[\"labels\"] = torch.tensor(output[\"labels\"], dtype=torch.long)\n\n        return output\n    \ncollate_fn = Collate(True)","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2025-12-23T13:39:28.872613Z","iopub.execute_input":"2025-12-23T13:39:28.873154Z","iopub.status.idle":"2025-12-23T13:39:28.879336Z","shell.execute_reply.started":"2025-12-23T13:39:28.873125Z","shell.execute_reply":"2025-12-23T13:39:28.878471Z"}},"outputs":[],"execution_count":16},{"cell_type":"markdown","source":"**Клас моделі**","metadata":{}},{"cell_type":"code","source":"# 1. embeddings  шар ембедингів.","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2025-12-23T13:39:54.900618Z","iopub.execute_input":"2025-12-23T13:39:54.900932Z","iopub.status.idle":"2025-12-23T13:39:54.904543Z","shell.execute_reply.started":"2025-12-23T13:39:54.900906Z","shell.execute_reply":"2025-12-23T13:39:54.903709Z"}},"outputs":[],"execution_count":19},{"cell_type":"markdown","source":"2. lstm — шар, який відповідає за Bi-LSTM-компонент у нашій мережі.\n\n\n\n - embedding_dim визначає розмірність вхідних векторів.\n - hidden_dim визначає розмірність прихованих станів і вихідного тензора.\n - bidirectional робить LSTM двонаправленою.\n - num_layers дозволяє створити глибоку модель з трьома послідовними LSTM-шарами.\n - batch_first вказує, що перший розмір вхідного тензора відповідає розміру батчу, що полегшує обробку даних у батчах.\n - fc створює повнозв'язний (лінійний) шар.\n - output_size визначає кількість нейронів у вихідному шарі, що відповідає кількості класів у задачі класифікації.","metadata":{}},{"cell_type":"code","source":"class BiLSTMTagger(nn.Module):\n\n    def __init__(self, embedding_dim, hidden_dim, vocab_size, output_size, embeddings=None):\n        super(BiLSTMTagger, self).__init__()\n        \n        # 1. Embedding Layer\n        if embeddings is None:\n            self.embeddings = nn.Embedding(vocab_size, embedding_dim)\n        else:\n            self.embeddings = nn.Embedding.from_pretrained(embeddings)\n        \n        # 2. LSTM Layer\n        self.lstm = nn.LSTM(embedding_dim, hidden_dim, bidirectional=True, num_layers=3, batch_first=True)\n\n        # 3. Dense Layer\n        self.fc = nn.Linear(2*hidden_dim, output_size)\n        \n    def forward(self, batch_text):\n\n        embeddings = self.embeddings(batch_text)\n        \n        lstm_output, _ = self.lstm(embeddings) \n\n        logits = self.fc(lstm_output)\n        return logits","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2025-12-23T13:40:21.322859Z","iopub.execute_input":"2025-12-23T13:40:21.323568Z","iopub.status.idle":"2025-12-23T13:40:21.328494Z","shell.execute_reply.started":"2025-12-23T13:40:21.32354Z","shell.execute_reply":"2025-12-23T13:40:21.328035Z"}},"outputs":[],"execution_count":21},{"cell_type":"markdown","source":"Допоміжні функції для тренування","metadata":{}},{"cell_type":"markdown","source":"Оскільки нас цікавить тільки якість передбачення для міток іменованих сутностей, будемо прибирати з результатів токени зі значенням, меншим за 0.","metadata":{}},{"cell_type":"code","source":"def remove_predictions_for_masked_items(predicted_labels, correct_labels): \n\n    predicted_labels_without_mask = []\n    correct_labels_without_mask = []\n        \n    for p, c in zip(predicted_labels, correct_labels):\n        if c > 0:\n            predicted_labels_without_mask.append(p)\n            correct_labels_without_mask.append(c)\n            \n    return predicted_labels_without_mask, correct_labels_without_mask","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2025-12-23T13:40:25.941118Z","iopub.execute_input":"2025-12-23T13:40:25.941696Z","iopub.status.idle":"2025-12-23T13:40:25.945877Z","shell.execute_reply.started":"2025-12-23T13:40:25.941668Z","shell.execute_reply":"2025-12-23T13:40:25.945176Z"}},"outputs":[],"execution_count":22},{"cell_type":"markdown","source":"Тепер визначимо функцію, відповідальну за навчання й валідацію. Як валідаційну метрику використаємо macro F1.","metadata":{}},{"cell_type":"code","source":"def train(model, train_loader, val_loader, batch_size, max_epochs, num_batches, patience, output_path):\n    criterion = nn.CrossEntropyLoss(ignore_index=-100)  # we mask the <pad> labels\n    optimizer = Adam(model.parameters())\n\n    train_f_score_history = []\n    dev_f_score_history = []\n    no_improvement = 0\n    for epoch in range(max_epochs):\n\n        total_loss = 0\n        predictions, correct = [], []\n        model.train()\n        for batch in tqdm(train_loader, total=num_batches, desc=f\"Epoch {epoch}\"):\n            \n            cur_batch_size, text_length = batch['input_ids'].shape\n            \n            pred = model(batch['input_ids'].to(device)).view(cur_batch_size*text_length, NUM_CLASSES)\n            gold = batch['labels'].to(device).view(cur_batch_size*text_length)\n            \n            loss = criterion(pred, gold)\n            \n            total_loss += loss.item()\n            \n            optimizer.zero_grad()\n            loss.backward()\n            optimizer.step()\n\n            _, pred_indices = torch.max(pred, 1)\n            \n            predicted_labels = list(pred_indices.cpu().numpy())\n            correct_labels = list(batch['labels'].view(cur_batch_size*text_length).numpy())\n            \n            predicted_labels, correct_labels = remove_predictions_for_masked_items(predicted_labels, \n                                                                                   correct_labels)\n            \n            predictions += predicted_labels\n            correct += correct_labels\n\n        train_score = f1_score(correct, predictions, average=\"macro\")\n        train_f_score_history.append(train_score)\n            \n        print(\"Total training loss:\", total_loss)\n        print(\"Training Macro F1:\", train_score)\n        \n        total_loss = 0\n        predictions, correct = [], []\n        \n        model.eval()\n        with torch.no_grad():\n            for batch in val_loader:\n\n                cur_batch_size, text_length = batch['input_ids'].shape\n                \n                pred = model(batch['input_ids'].to(device)).view(cur_batch_size*text_length, NUM_CLASSES)\n                gold = batch['labels'].to(device).view(cur_batch_size*text_length)\n                \n                loss = criterion(pred, gold)\n                total_loss += loss.item()\n\n                _, pred_indices = torch.max(pred, 1)\n                predicted_labels = list(pred_indices.cpu().numpy())\n                correct_labels = list(batch['labels'].view(cur_batch_size*text_length).numpy())\n\n                predicted_labels, correct_labels = remove_predictions_for_masked_items(predicted_labels, \n                                                                                       correct_labels)\n\n                predictions += predicted_labels\n                correct += correct_labels\n\n        dev_score = f1_score(correct, predictions, average=\"macro\")\n            \n        print(\"Total validation loss:\", total_loss)\n        print(\"Validation Macro F1:\", dev_score)\n        \n        dev_f = dev_score\n        if len(dev_f_score_history) > patience and dev_f < max(dev_f_score_history):\n            no_improvement += 1\n\n        elif len(dev_f_score_history) == 0 or dev_f > max(dev_f_score_history):\n            print(\"Saving model.\")\n            torch.save(model, output_path)\n            no_improvement = 0\n            \n        if no_improvement > patience:\n            print(\"Validation F-score does not improve anymore. Stop training.\")\n            dev_f_score_history.append(dev_f)\n            break\n            \n        dev_f_score_history.append(dev_f)\n        \n    return train_f_score_history, dev_f_score_history","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2025-12-23T13:40:28.498212Z","iopub.execute_input":"2025-12-23T13:40:28.498494Z","iopub.status.idle":"2025-12-23T13:40:28.512116Z","shell.execute_reply.started":"2025-12-23T13:40:28.49847Z","shell.execute_reply":"2025-12-23T13:40:28.511333Z"}},"outputs":[],"execution_count":23},{"cell_type":"markdown","source":"☝ Зверніть увагу, тут ми додаємо механізм ранньої зупинки тренування.","metadata":{}},{"cell_type":"markdown","source":"Визначимо функцію для тестування.","metadata":{}},{"cell_type":"code","source":"def test(model, test_iter, batch_size, labels, target_names): \n    total_loss = 0\n    predictions, correct = [], []\n    \n    model.eval()\n    with torch.no_grad():    \n    \n        for batch in test_iter:\n\n            cur_batch_size, text_length = batch['input_ids'].shape\n\n            pred = model(batch['input_ids'].to(device)).view(cur_batch_size*text_length, NUM_CLASSES)\n            gold = batch['labels'].to(device).view(cur_batch_size*text_length)\n\n            _, pred_indices = torch.max(pred, 1)\n            predicted_labels = list(pred_indices.cpu().numpy())\n            correct_labels = list(batch['labels'].view(cur_batch_size*text_length).numpy())\n\n            predicted_labels, correct_labels = remove_predictions_for_masked_items(predicted_labels, \n                                                                                   correct_labels)\n\n            predictions += predicted_labels\n            correct += correct_labels\n    \n    print(classification_report(correct, predictions, labels=labels, target_names=target_names))","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2025-12-23T13:40:33.869128Z","iopub.execute_input":"2025-12-23T13:40:33.869635Z","iopub.status.idle":"2025-12-23T13:40:33.875311Z","shell.execute_reply.started":"2025-12-23T13:40:33.869607Z","shell.execute_reply":"2025-12-23T13:40:33.874543Z"}},"outputs":[],"execution_count":24},{"cell_type":"markdown","source":"# ***Тренування моделі***","metadata":{}},{"cell_type":"markdown","source":"Спершу визначимо гіперпараметри моделі.","metadata":{}},{"cell_type":"code","source":"EMBEDDING_DIM = 100\nHIDDEN_DIM = 64\nNUM_CLASSES = len(id2label)\nMAX_EPOCHS = 50\nPATIENCE = 3\nBATCH_SIZE = 32\nVOCAB_SIZE = len(word2id)\nOUTPUT_PATH = \"/tmp/bilstmtagger\"\nnum_batches = math.ceil(len(train_df) / BATCH_SIZE)\n","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2025-12-23T13:40:38.885222Z","iopub.execute_input":"2025-12-23T13:40:38.885508Z","iopub.status.idle":"2025-12-23T13:40:38.889747Z","shell.execute_reply.started":"2025-12-23T13:40:38.885485Z","shell.execute_reply":"2025-12-23T13:40:38.889108Z"}},"outputs":[],"execution_count":25},{"cell_type":"markdown","source":"**Створимо об’єкти Dataset і DataLoader.**","metadata":{}},{"cell_type":"code","source":"train_dataset = CoNLLDataset(train_df)\nval_dataset = CoNLLDataset(val_df)\ntest_dataset = CoNLLDataset(test_df)\n\ntrain_loader = DataLoader(train_dataset,\n                              batch_size=BATCH_SIZE,\n                              shuffle=False,\n                              collate_fn=collate_fn,\n                              num_workers=4,\n                              pin_memory=True,\n                              drop_last=False)\n\nval_loader = DataLoader(val_dataset,\n                              batch_size=BATCH_SIZE,\n                              shuffle=False,\n                              collate_fn=collate_fn,\n                              num_workers=4,\n                              pin_memory=True,\n                              drop_last=False)\n\ntest_loader = DataLoader(test_dataset,\n                              batch_size=BATCH_SIZE,\n                              shuffle=False,\n                              collate_fn=collate_fn,\n                              num_workers=4,\n                              pin_memory=True,\n                              drop_last=False)\n","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2025-12-23T13:40:51.449101Z","iopub.execute_input":"2025-12-23T13:40:51.449708Z","iopub.status.idle":"2025-12-23T13:40:51.45487Z","shell.execute_reply.started":"2025-12-23T13:40:51.449681Z","shell.execute_reply":"2025-12-23T13:40:51.45429Z"}},"outputs":[],"execution_count":27},{"cell_type":"markdown","source":"Створимо об’єкт моделі.","metadata":{}},{"cell_type":"code","source":"tagger = BiLSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, VOCAB_SIZE+2, NUM_CLASSES) \ntagger\n","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2025-12-23T13:40:55.100684Z","iopub.execute_input":"2025-12-23T13:40:55.101185Z","iopub.status.idle":"2025-12-23T13:40:55.147268Z","shell.execute_reply.started":"2025-12-23T13:40:55.101158Z","shell.execute_reply":"2025-12-23T13:40:55.146675Z"}},"outputs":[{"execution_count":28,"output_type":"execute_result","data":{"text/plain":"BiLSTMTagger(\n  (embeddings): Embedding(11987, 100)\n  (lstm): LSTM(100, 64, num_layers=3, batch_first=True, bidirectional=True)\n  (fc): Linear(in_features=128, out_features=9, bias=True)\n)"},"metadata":{}}],"execution_count":28},{"cell_type":"markdown","source":"# **Нарешті, переходимо до тренування!**","metadata":{}},{"cell_type":"code","source":"train_f, dev_f = train(tagger.to(device), train_loader, val_loader, BATCH_SIZE, MAX_EPOCHS, \n                       num_batches, PATIENCE, OUTPUT_PATH)\n","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2025-12-23T13:40:58.145505Z","iopub.execute_input":"2025-12-23T13:40:58.146139Z","iopub.status.idle":"2025-12-23T13:41:56.822635Z","shell.execute_reply.started":"2025-12-23T13:40:58.146112Z","shell.execute_reply":"2025-12-23T13:41:56.821866Z"}},"outputs":[{"output_type":"display_data","data":{"text/plain":"Epoch 0:   0%|          | 0/1 [00:00<?, ?it/s]","application/vnd.jupyter.widget-view+json":{"version_major":2,"version_minor":0,"model_id":"7decc1f1f97f495d99436d2269cce9d8"}},"metadata":{}},{"name":"stdout","text":"Total training loss: 353.7434974461794\nTraining Macro F1: 0.03958767667117996\nTotal validation loss: 56.29690897464752\nValidation Macro F1: 0.1554037990179885\nSaving model.\n","output_type":"stream"},{"output_type":"display_data","data":{"text/plain":"Epoch 1:   0%|          | 0/1 [00:00<?, ?it/s]","application/vnd.jupyter.widget-view+json":{"version_major":2,"version_minor":0,"model_id":"592f622282a94b6fa0e2adfe70543029"}},"metadata":{}},{"name":"stdout","text":"Total training loss: 171.02498000487685\nTraining Macro F1: 0.3665205388207673\nTotal validation loss: 31.01619492098689\nValidation Macro F1: 0.4346473736511767\nSaving model.\n","output_type":"stream"},{"output_type":"display_data","data":{"text/plain":"Epoch 2:   0%|          | 0/1 [00:00<?, ?it/s]","application/vnd.jupyter.widget-view+json":{"version_major":2,"version_minor":0,"model_id":"545b8d54a9be41f4b4d48a12376e0672"}},"metadata":{}},{"name":"stdout","text":"Total training loss: 93.21458024391904\nTraining Macro F1: 0.6064505186631693\nTotal validation loss: 24.45226603979245\nValidation Macro F1: 0.6234792997648577\nSaving model.\n","output_type":"stream"},{"output_type":"display_data","data":{"text/plain":"Epoch 3:   0%|          | 0/1 [00:00<?, ?it/s]","application/vnd.jupyter.widget-view+json":{"version_major":2,"version_minor":0,"model_id":"4b21eb4319de428faaa4c88b8ffed4cf"}},"metadata":{}},{"name":"stdout","text":"Total training loss: 55.376461032545194\nTraining Macro F1: 0.7211550380348635\nTotal validation loss: 20.128109176643193\nValidation Macro F1: 0.6809185337479585\nSaving model.\n","output_type":"stream"},{"output_type":"display_data","data":{"text/plain":"Epoch 4:   0%|          | 0/1 [00:00<?, ?it/s]","application/vnd.jupyter.widget-view+json":{"version_major":2,"version_minor":0,"model_id":"4d840683a57644938c23864e87af093d"}},"metadata":{}},{"name":"stdout","text":"Total training loss: 34.77021627500653\nTraining Macro F1: 0.7875147985212563\nTotal validation loss: 18.936612374614924\nValidation Macro F1: 0.6957778376683812\nSaving model.\n","output_type":"stream"},{"output_type":"display_data","data":{"text/plain":"Epoch 5:   0%|          | 0/1 [00:00<?, ?it/s]","application/vnd.jupyter.widget-view+json":{"version_major":2,"version_minor":0,"model_id":"9d8fba3188ef42e6aacd6a340f8128dc"}},"metadata":{}},{"name":"stdout","text":"Total training loss: 22.967172321339604\nTraining Macro F1: 0.8264177756684377\nTotal validation loss: 19.31780520780012\nValidation Macro F1: 0.7048070549651843\nSaving model.\n","output_type":"stream"},{"output_type":"display_data","data":{"text/plain":"Epoch 6:   0%|          | 0/1 [00:00<?, ?it/s]","application/vnd.jupyter.widget-view+json":{"version_major":2,"version_minor":0,"model_id":"a5a98622401040f1bffd690ffdab6809"}},"metadata":{}},{"name":"stdout","text":"Total training loss: 16.73148449230939\nTraining Macro F1: 0.845338835270022\nTotal validation loss: 19.7083716384368\nValidation Macro F1: 0.709878629100563\nSaving model.\n","output_type":"stream"},{"output_type":"display_data","data":{"text/plain":"Epoch 7:   0%|          | 0/1 [00:00<?, ?it/s]","application/vnd.jupyter.widget-view+json":{"version_major":2,"version_minor":0,"model_id":"c0d2e333244d4eeca3de87161f2c77cd"}},"metadata":{}},{"name":"stdout","text":"Total training loss: 12.158050220925361\nTraining Macro F1: 0.8582833626513469\nTotal validation loss: 22.063346865965286\nValidation Macro F1: 0.7106468894772776\nSaving model.\n","output_type":"stream"},{"output_type":"display_data","data":{"text/plain":"Epoch 8:   0%|          | 0/1 [00:00<?, ?it/s]","application/vnd.jupyter.widget-view+json":{"version_major":2,"version_minor":0,"model_id":"5e4a420afd9b4183ba807d46620e2211"}},"metadata":{}},{"name":"stdout","text":"Total training loss: 9.011046217085095\nTraining Macro F1: 0.8661551110993163\nTotal validation loss: 22.61647942804848\nValidation Macro F1: 0.7056829655660253\n","output_type":"stream"},{"output_type":"display_data","data":{"text/plain":"Epoch 9:   0%|          | 0/1 [00:00<?, ?it/s]","application/vnd.jupyter.widget-view+json":{"version_major":2,"version_minor":0,"model_id":"3348b626bdcd4fa888e4664e12a9ad19"}},"metadata":{}},{"name":"stdout","text":"Total training loss: 7.48868500032404\nTraining Macro F1: 0.8706112565766119\nTotal validation loss: 23.365522129897727\nValidation Macro F1: 0.706516754359169\n","output_type":"stream"},{"output_type":"display_data","data":{"text/plain":"Epoch 10:   0%|          | 0/1 [00:00<?, ?it/s]","application/vnd.jupyter.widget-view+json":{"version_major":2,"version_minor":0,"model_id":"7521cd60f3a8459da2491420c4bd1103"}},"metadata":{}},{"name":"stdout","text":"Total training loss: 7.52255159667402\nTraining Macro F1: 0.8723766260019924\nTotal validation loss: 23.487518389600154\nValidation Macro F1: 0.7187328394024858\nSaving model.\n","output_type":"stream"},{"output_type":"display_data","data":{"text/plain":"Epoch 11:   0%|          | 0/1 [00:00<?, ?it/s]","application/vnd.jupyter.widget-view+json":{"version_major":2,"version_minor":0,"model_id":"15d0897f562f4dd4b632f41d336212d3"}},"metadata":{}},{"name":"stdout","text":"Total training loss: 5.2056557618197985\nTraining Macro F1: 0.8770809252436663\nTotal validation loss: 22.84549219026667\nValidation Macro F1: 0.7259519835597672\nSaving model.\n","output_type":"stream"},{"output_type":"display_data","data":{"text/plain":"Epoch 12:   0%|          | 0/1 [00:00<?, ?it/s]","application/vnd.jupyter.widget-view+json":{"version_major":2,"version_minor":0,"model_id":"8b7073df28784c469bddebb9f67e1722"}},"metadata":{}},{"name":"stdout","text":"Total training loss: 3.730433019645716\nTraining Macro F1: 0.8817391806991443\nTotal validation loss: 24.093764073120838\nValidation Macro F1: 0.7297105027250947\nSaving model.\n","output_type":"stream"},{"output_type":"display_data","data":{"text/plain":"Epoch 13:   0%|          | 0/1 [00:00<?, ?it/s]","application/vnd.jupyter.widget-view+json":{"version_major":2,"version_minor":0,"model_id":"1472ae4e76d84e868b02287f1b140840"}},"metadata":{}},{"name":"stdout","text":"Total training loss: 2.674404811583372\nTraining Macro F1: 0.8827293187581541\nTotal validation loss: 25.0675460514758\nValidation Macro F1: 0.7257806087564396\n","output_type":"stream"},{"output_type":"display_data","data":{"text/plain":"Epoch 14:   0%|          | 0/1 [00:00<?, ?it/s]","application/vnd.jupyter.widget-view+json":{"version_major":2,"version_minor":0,"model_id":"6e04e32a17d2429aa52838f9e88758ad"}},"metadata":{}},{"name":"stdout","text":"Total training loss: 2.5441998308870097\nTraining Macro F1: 0.883515122476322\nTotal validation loss: 26.018436818634655\nValidation Macro F1: 0.7213237091726225\n","output_type":"stream"},{"output_type":"display_data","data":{"text/plain":"Epoch 15:   0%|          | 0/1 [00:00<?, ?it/s]","application/vnd.jupyter.widget-view+json":{"version_major":2,"version_minor":0,"model_id":"1238da4a1cb44532b8fa9b252878733e"}},"metadata":{}},{"name":"stdout","text":"Total training loss: 4.597531857076319\nTraining Macro F1: 0.8770885805688063\nTotal validation loss: 23.922181680827634\nValidation Macro F1: 0.722225625693545\n","output_type":"stream"},{"output_type":"display_data","data":{"text/plain":"Epoch 16:   0%|          | 0/1 [00:00<?, ?it/s]","application/vnd.jupyter.widget-view+json":{"version_major":2,"version_minor":0,"model_id":"0f7850ed1e9942cc85d61e7c25e18bc8"}},"metadata":{}},{"name":"stdout","text":"Total training loss: 3.5224977466768905\nTraining Macro F1: 0.8804028458690291\nTotal validation loss: 25.844663131625566\nValidation Macro F1: 0.728417654211265\nValidation F-score does not improve anymore. Stop training.\n","output_type":"stream"}],"execution_count":29},{"cell_type":"markdown","source":"*Візуалізуємо навчальну й валідаційну метрики.*","metadata":{}},{"cell_type":"code","source":"df = pd.DataFrame({'epochs': range(0,len(train_f)), \n                  'train_f1': train_f, \n                   'dev_f1': dev_f})\n\nplt.plot('epochs', 'train_f1', data=df, color='blue', linewidth=2)\nplt.plot('epochs', 'dev_f1', data=df, color='green', linewidth=2)\nplt.legend()\nplt.show()\n","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2025-12-23T14:18:40.334474Z","iopub.execute_input":"2025-12-23T14:18:40.335511Z","iopub.status.idle":"2025-12-23T14:18:40.574383Z","shell.execute_reply.started":"2025-12-23T14:18:40.335478Z","shell.execute_reply":"2025-12-23T14:18:40.573805Z"}},"outputs":[{"output_type":"display_data","data":{"text/plain":"<Figure size 640x480 with 1 Axes>","image/png":"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vfWW1aV5xAMPPMBNN93E2WefTWhoKIMGDWLq1KmMGzfO6tLaRc3vlUD4nQNQUVHB/fffz8033+xXD5Z75plnCAkJ4e6777a6FI8rKiqitLSUp59+mquvvppPP/2UX/3qV/z6179m1apV7f7+rZoOXnzH5MmT2bx5M19++aXVpXhMfn4+99xzD8uXL/fOtUwLOBwOhgwZwpw5cwAYNGgQmzdvZuHChUyYMMHi6truf//3f/nb3/7GokWLOO+889iwYQNTp04lJSXFL84vkFVXV/Pb3/4WwzB4+eWXrS7HY9atW8ef//xn1q9fj81ms7ocj3M4HAD88pe/5N577wUgMzOTr7/+moULF3LZZZe16/sHZM9It27dCA4OprCw0GV7YWEhycnJFlXleVOmTOHDDz9kxYoV9OjRw+pyPGbdunUUFRVx/vnnExISQkhICKtWreIvf/kLISEh2O12q0tss+7du3Puuee6bDvnnHO8MqrdG2bMmOHsHRkwYAC33nor9957r9/2dNX8XvH33zk1QWTv3r0sX77cr3pFvvjiC4qKiujZs6fz987evXu57777SE9Pt7q8NuvWrRshISGW/d4JyDASFhbG4MGDycnJcW5zOBzk5OQwfPhwCyvzDMMwmDJlCkuWLOHzzz+nd+/eVpfkUVdccQXff/89GzZscC5Dhgxh3LhxbNiwgeDgYKtLbLOLLrqo3u3YO3bsoFevXhZV5FknTpxwebo3QHBwsPOvM3/Tu3dvkpOTXX7nlJSU8M033/jF7xyoDSI//vgjn332GV27drW6JI+69dZb2bRpk8vvnZSUFGbMmMEnn3xidXltFhYWxtChQy37vROwl2mmTZvGhAkTGDJkCMOGDWP+/PmUlZUxadIkq0trs8mTJ7No0SLef/99YmNjndek4+PjiYyMtLi6touNja03/iU6OpquXbv6zbiYe++9lwsvvJA5c+bw29/+ltzcXF555RVeeeUVq0vziNGjR/PUU0/Rs2dPzjvvPL777jteeOEFbrvtNqtLa7XS0lJ27tzpXN+9ezcbNmygS5cu9OzZk6lTp/Lkk0/Sp08fevfuzcyZM0lJSWHMmDHWFe2Gps6ve/fu3HDDDaxfv54PP/wQu93u/L3TpUsXwsLCrCrbLc39DE8PWKGhoSQnJ9OvXz9vl9oqzZ3fjBkzGDt2LJdeeimXX345y5Yt41//+hcrV65s/+IsuYeng3jxxReNnj17GmFhYcawYcOMNWvWWF2SRwANLm+88YbVpbUbf7u11zAM41//+pfRv39/Izw83Dj77LONV155xeqSPKakpMS45557jJ49exoRERHGGWecYTz88MNGZWWl1aW12ooVKxr8/27ChAmGYZi3986cOdNISkoywsPDjSuuuMLYvn27tUW7oanz2717d6O/d1asWGF16S3W3M/wdL52a29Lzu+1114zzjrrLCMiIsLIyMgw3nvvPa/UZjMMH57yUERERHxeQI4ZERERkY5DYUREREQspTAiIiIillIYEREREUspjIiIiIilFEZERETEUgojIiIiYimFEREREbGUwoiIiIhYSmFERERELKUwIiIiIpZSGBERERFL/X80s0e8lF6KvAAAAABJRU5ErkJggg==\n"},"metadata":{}}],"execution_count":30},{"cell_type":"markdown","source":"Перевіримо якість моделі на тестовому наборі даних. Завантажимо кращу зі збережених моделей.","metadata":{}},{"cell_type":"code","source":"tagger = torch.load(OUTPUT_PATH, weights_only=False)\n","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2025-12-23T14:18:47.659929Z","iopub.execute_input":"2025-12-23T14:18:47.660264Z","iopub.status.idle":"2025-12-23T14:18:47.671706Z","shell.execute_reply.started":"2025-12-23T14:18:47.660238Z","shell.execute_reply":"2025-12-23T14:18:47.67101Z"}},"outputs":[],"execution_count":33},{"cell_type":"markdown","source":"Виконаємо перевірку.","metadata":{}},{"cell_type":"code","source":"labels = list(label2id.keys())[1:]\nlabel_idxs = list(label2id.values())[1:]\n\ntest(tagger, test_loader, BATCH_SIZE, labels = label_idxs, target_names = labels)\n","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2025-12-23T14:18:50.916603Z","iopub.execute_input":"2025-12-23T14:18:50.917493Z","iopub.status.idle":"2025-12-23T14:18:51.341593Z","shell.execute_reply.started":"2025-12-23T14:18:50.91746Z","shell.execute_reply":"2025-12-23T14:18:51.340681Z"}},"outputs":[{"name":"stdout","text":"              precision    recall  f1-score   support\n\n       B-PER       0.89      0.66      0.76      1617\n       I-PER       0.90      0.75      0.82      1156\n       B-ORG       0.81      0.62      0.70      1661\n       I-ORG       0.85      0.70      0.76       835\n       B-LOC       0.88      0.79      0.83      1668\n       I-LOC       0.75      0.60      0.67       257\n      B-MISC       0.76      0.66      0.70       702\n      I-MISC       0.64      0.60      0.62       216\n\n   micro avg       0.85      0.69      0.76      8112\n   macro avg       0.81      0.67      0.73      8112\nweighted avg       0.85      0.69      0.76      8112\n\n","output_type":"stream"}],"execution_count":34}]}
+# This is double with change for python script from Topic_11_RNN_GRU_LSTM.ipynb from Keggle and Colab
+# Load all necessary libraries
+import os
+import gc
+import math
+import random
+from collections import defaultdict
+
+import pandas as pd
+import numpy as np
+
+import matplotlib.pyplot as plt
+
+import torch
+from torch.utils.data import Dataset, DataLoader
+import torch.nn as nn
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+
+from torch.optim import Adam
+from tqdm import tqdm  # change for python script
+
+from sklearn.metrics import classification_report, f1_score
+
+import warnings
+warnings.filterwarnings('ignore')
+
+print("Визначимо шлях до даних і пристрій, на якому будемо проводити розрахунки.\n")
+
+data_path = './conll003-englishversion/'
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+print('###\n')
+print(data_path)
+print(device)
+print("###\n")
+
+print(
+    "Визначимо функцію для читання даних у форматі CoNLL2003 і зчитаємо їх .Оскільки нас цікавлять лише іменовані сутності, будемо зчитувати тільки елементи на позиції 0 — слова — і 3 — мітки іменованих сутностей. У коді це буде відображатися так: sentences.append((l[0],l[3].strip('\\n'))).\n")
+
+
+def load_sentences(filepath):
+    final = []
+    sentences = []
+    with open(filepath, 'r', encoding="utf-8") as f:
+        for line in f.readlines():
+            if line.strip() == "" or line.startswith("-DOCSTART-"):
+                if len(sentences) > 0:
+                    final.append(sentences)
+                    sentences = []
+            else:
+                l = line.split(' ')
+                if len(l) >= 4:
+                    sentences.append((l[0], l[3].strip('\n')))
+    return final
+
+
+train_sents = load_sentences(data_path + 'train.txt')
+test_sents = load_sentences(data_path + 'test.txt')
+val_sents = load_sentences(data_path + 'valid.txt')
+
+train_sents = train_sents
+print("###\n")
+print(train_sents[:3])
+print("###\n")
+
+
+print("Визначимо список міток класів і закодуємо їх для чисельного представлення.\n")
+
+ner_labels = ['O', 'B-PER', 'I-PER', 'B-ORG',
+              'I-ORG', 'B-LOC', 'I-LOC', 'B-MISC', 'I-MISC']
+# NUM_CLASSES = len(ner_labels)  # додано для python
+id2label = {str(i): label for i, label in enumerate(ner_labels)}
+label2id = {value: int(key) for key, value in id2label.items()}
+
+print("Представимо наші завантажені речення як словник, де під ключем text будуть зберігатися наші речення, а під ключем label — відповідні мітки іменованих сутностей.\n")
+
+
+def get_df(samples):
+    df, label = [], []
+    for lines in samples:
+        cur_line, cur_label = list(zip(*lines))
+        df.append(list(cur_line))
+        label.append([label2id[i] for i in cur_label])
+    return {'text': df, 'label': label}
+
+
+train_df = get_df(train_sents)
+test_df = get_df(test_sents)
+val_df = get_df(val_sents)
+
+print("###\n")
+print("Train first 2 samples:\n", train_df['text'][:2])
+print("Test first 2 samples:\n", test_df['text'][:2])
+print("Val first 2 samples:\n", val_df['text'][:2])
+print("###\n")
+
+print("Для подальшої роботи з даними нам потрібно представити їх у чисельній формі. Спочатку побудуємо словник. Для цього спершу підрахуємо кількість появи кожного слова в корпусі.\n")
+
+word_dict = defaultdict(int)
+
+for line in train_df['text']:
+    for word in line:
+        word_dict[word] += 1
+
+print("Ми не будемо використовувати слова, які дуже рідко з’являються, для тренування. Таким чином, ми зменшимо кількість неінформативних ознак у наборі даних.\n")
+
+lower_freq_word = []
+for k, v in word_dict.items():
+    if v < 2:
+        lower_freq_word.append(k)
+
+for word in lower_freq_word:
+    del word_dict[word]
+
+
+print("""Додамо до словника два спеціальні токени.
+# Перший токен <UNK> позначатиме всі слова, які не присутні у словнику, так звані Out Of Vocabulary words, OOV words.
+# Другий токен <PAD> позначає падинг (padding)\n""")
+
+word_dict['<UNK>'] = -1
+word_dict['<PAD>'] = -2
+
+
+print("Створюємо словник, який буде містити слово та його індекс. Ми будемо використовувати цей словник, щоб представити наші речення в числовому вигляді для подальшої обробки нейронною мережею.\n")
+
+word2id = {}
+
+for idx, word in enumerate(word_dict.keys()):
+    word2id[word] = idx
+
+
+print("Dataset і DataLoader.\n")
+
+print("##############################################\n")
+
+
+def prepare_sequence(seq, to_ix):
+    idxs = []
+    for w in seq:
+        if w in to_ix.keys():
+            idxs.append(to_ix[w])
+        else:
+            idxs.append(to_ix['<UNK>'])
+    return idxs
+
+
+print("Опишемо клас Dataset")
+
+
+class CoNLLDataset(Dataset):
+    def __init__(self, df):
+        self.texts = df['text']
+        self.labels = df['label']
+
+    def __len__(self):
+        return len(self.texts)
+
+    def __getitem__(self, item):
+        inputs = prepare_sequence(self.texts[item], word2id)
+        label = self.labels[item]
+        return {
+            'input_ids': inputs,
+            'labels': label
+        }
+
+
+print("Для тренування поточної моделі нам необхідно визначити collate-функцію.")
+
+
+class Collate:
+    def __init__(self, train):
+        self.train = train
+
+    def __call__(self, batch):
+        output = dict()
+        output["input_ids"] = [sample["input_ids"] for sample in batch]
+        if self.train:
+            output["labels"] = [sample["labels"] for sample in batch]
+
+        # calculate max token length of this batch
+        batch_max = max([len(ids) for ids in output["input_ids"]])
+
+        # add padding
+
+        output["input_ids"] = [
+            s + (batch_max - len(s)) * [word2id['<PAD>']] for s in output["input_ids"]]
+        if self.train:
+            output['labels'] = [s + (batch_max - len(s)) * [-100]
+                                for s in output["labels"]]
+
+        # convert to tensors
+        output["input_ids"] = torch.tensor(
+            output["input_ids"], dtype=torch.long)
+        if self.train:
+            output["labels"] = torch.tensor(output["labels"], dtype=torch.long)
+
+        return output
+
+
+collate_fn = Collate(True)
+
+
+print("##############################################\n")
+
+print("Клас моделі.\n")
+print("##############################################\n")
+
+
+class BiLSTMTagger(nn.Module):
+
+    def __init__(self, embedding_dim, hidden_dim, vocab_size, output_size, embeddings=None):
+        super(BiLSTMTagger, self).__init__()
+
+        # 1. Embedding Layer
+        if embeddings is None:
+            self.embeddings = nn.Embedding(vocab_size, embedding_dim)
+        else:
+            self.embeddings = nn.Embedding.from_pretrained(embeddings)
+
+        # 2. LSTM Layer
+        self.lstm = nn.LSTM(embedding_dim, hidden_dim,
+                            bidirectional=True, num_layers=3, batch_first=True)
+
+        # 3. Dense Layer
+        self.fc = nn.Linear(2*hidden_dim, output_size)
+
+    def forward(self, batch_text):
+
+        embeddings = self.embeddings(batch_text)
+
+        lstm_output, _ = self.lstm(embeddings)
+
+        logits = self.fc(lstm_output)
+        return logits
+
+
+print("##############################################\n")
+
+
+print("Допоміжні функції для тренування\n")
+print("Оскільки нас цікавить тільки якість передбачення для міток іменованих сутностей, будемо прибирати з результатів токени зі значенням, меншим за 0.\n")
+
+
+def remove_predictions_for_masked_items(predicted_labels, correct_labels):
+
+    predicted_labels_without_mask = []
+    correct_labels_without_mask = []
+
+    for p, c in zip(predicted_labels, correct_labels):
+        if c > 0:
+            predicted_labels_without_mask.append(p)
+            correct_labels_without_mask.append(c)
+
+    return predicted_labels_without_mask, correct_labels_without_mask
+
+
+print("Тепер визначимо функцію, відповідальну за навчання й валідацію. Як валідаційну метрику використаємо macro F1.\n")
+
+
+def train(model, train_loader, val_loader, batch_size, max_epochs, num_batches, patience, output_path):
+    criterion = nn.CrossEntropyLoss(
+        ignore_index=-100)  # we mask the <pad> labels
+    optimizer = Adam(model.parameters())
+
+    train_f_score_history = []
+    dev_f_score_history = []
+    no_improvement = 0
+    for epoch in range(max_epochs):
+
+        total_loss = 0
+        predictions, correct = [], []
+        model.train()
+        for batch in tqdm(train_loader, total=num_batches, desc=f"Epoch {epoch}"):
+
+            cur_batch_size, text_length = batch['input_ids'].shape
+
+            pred = model(batch['input_ids'].to(device)).view(
+                cur_batch_size*text_length, NUM_CLASSES)
+            gold = batch['labels'].to(device).view(cur_batch_size*text_length)
+
+            loss = criterion(pred, gold)
+
+            total_loss += loss.item()
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            _, pred_indices = torch.max(pred, 1)
+
+            predicted_labels = list(pred_indices.cpu().numpy())
+            correct_labels = list(batch['labels'].view(
+                cur_batch_size*text_length).numpy())
+
+            predicted_labels, correct_labels = remove_predictions_for_masked_items(predicted_labels,
+                                                                                   correct_labels)
+
+            predictions += predicted_labels
+            correct += correct_labels
+
+        train_score = f1_score(correct, predictions, average="macro")
+        train_f_score_history.append(train_score)
+
+        print("Total training loss:", total_loss)
+        print("Training Macro F1:", train_score)
+
+        total_loss = 0
+        predictions, correct = [], []
+
+        model.eval()
+        with torch.no_grad():
+            for batch in val_loader:
+
+                cur_batch_size, text_length = batch['input_ids'].shape
+
+                pred = model(batch['input_ids'].to(device)).view(
+                    cur_batch_size*text_length, NUM_CLASSES)
+                gold = batch['labels'].to(device).view(
+                    cur_batch_size*text_length)
+
+                loss = criterion(pred, gold)
+                total_loss += loss.item()
+
+                _, pred_indices = torch.max(pred, 1)
+                predicted_labels = list(pred_indices.cpu().numpy())
+                correct_labels = list(batch['labels'].view(
+                    cur_batch_size*text_length).numpy())
+
+                predicted_labels, correct_labels = remove_predictions_for_masked_items(predicted_labels,
+                                                                                       correct_labels)
+
+                predictions += predicted_labels
+                correct += correct_labels
+
+        dev_score = f1_score(correct, predictions, average="macro")
+
+        print("Total validation loss:", total_loss)
+        print("Validation Macro F1:", dev_score)
+
+        dev_f = dev_score
+        if len(dev_f_score_history) > patience and dev_f < max(dev_f_score_history):
+            no_improvement += 1
+
+        elif len(dev_f_score_history) == 0 or dev_f > max(dev_f_score_history):
+            print("Saving model.")
+            torch.save(model.state_dict(), OUTPUT_PATH)
+            no_improvement = 0
+
+        if no_improvement > patience:
+            print("Validation F-score does not improve anymore. Stop training.")
+            dev_f_score_history.append(dev_f)
+            break
+
+        dev_f_score_history.append(dev_f)
+
+    return train_f_score_history, dev_f_score_history
+
+
+print("☝ Зверніть увагу, тут ми додаємо механізм ранньої зупинки тренування.")
+
+print("Early stopping (рання зупинка) — це стратегія в машинному навчанні, яка використовується для запобігання перенавчанню моделі\n")
+
+print("Визначимо функцію для тестування.\n")
+
+
+def test(model, test_iter, batch_size, labels, target_names):
+    total_loss = 0
+    predictions, correct = [], []
+
+    model.eval()
+    with torch.no_grad():
+
+        for batch in test_iter:
+
+            cur_batch_size, text_length = batch['input_ids'].shape
+
+            pred = model(batch['input_ids'].to(device)).view(
+                cur_batch_size*text_length, NUM_CLASSES)
+            gold = batch['labels'].to(device).view(cur_batch_size*text_length)
+
+            _, pred_indices = torch.max(pred, 1)
+            predicted_labels = list(pred_indices.cpu().numpy())
+            correct_labels = list(batch['labels'].view(
+                cur_batch_size*text_length).numpy())
+
+            predicted_labels, correct_labels = remove_predictions_for_masked_items(predicted_labels,
+                                                                                   correct_labels)
+
+            predictions += predicted_labels
+            correct += correct_labels
+
+    print(classification_report(correct, predictions,
+          labels=labels, target_names=target_names))
+
+
+print("##############################################\n")
+
+print("Тренування моделі\n")
+
+print("Спершу визначимо гіперпараметри моделі.\n")
+
+
+EMBEDDING_DIM = 200  # was 100
+HIDDEN_DIM = 128  # was 64
+NUM_CLASSES = len(id2label)
+MAX_EPOCHS = 50
+PATIENCE = 3
+BATCH_SIZE = 8  # was 32
+VOCAB_SIZE = len(word2id)
+OUTPUT_PATH = "./tmp/bilstmtagger"
+num_batches = math.ceil(len(train_df) / BATCH_SIZE)
+
+
+print("Створимо об’єкти Dataset і DataLoader.\n")
+
+train_dataset = CoNLLDataset(train_df)
+val_dataset = CoNLLDataset(val_df)
+test_dataset = CoNLLDataset(test_df)
+
+train_loader = DataLoader(train_dataset,
+                          batch_size=BATCH_SIZE,
+                          shuffle=True,  # chahe to True
+                          collate_fn=collate_fn,
+                          num_workers=0,  # change to 0 for python
+                          pin_memory=True,
+                          drop_last=False)
+
+val_loader = DataLoader(val_dataset,
+                        batch_size=BATCH_SIZE,
+                        shuffle=False,
+                        collate_fn=collate_fn,
+                        num_workers=0,  # change to 0 for python
+                        pin_memory=True,
+                        drop_last=False)
+
+test_loader = DataLoader(test_dataset,
+                         batch_size=BATCH_SIZE,
+                         shuffle=True,  # change to True
+                         collate_fn=collate_fn,
+                         num_workers=0,  # change to 0 for python
+                         pin_memory=True,
+                         drop_last=False)
+
+
+print("Створимо об’єкт моделі.\n")
+
+tagger = BiLSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, VOCAB_SIZE+2, NUM_CLASSES)
+print(f"THIS IS TAGGER:🎵 \n {tagger}")
+
+
+print("Нарешті, переходимо до тренування!\n")
+
+
+if __name__ == '__main__':
+    train_f, dev_f = train(tagger.to(device), train_loader, val_loader,
+                           BATCH_SIZE, MAX_EPOCHS, num_batches, PATIENCE, OUTPUT_PATH)
+
+    print("Візуалізуємо навчальну й валідаційну метрики.\n")
+
+    df = pd.DataFrame({'epochs': range(0, len(train_f)),
+                       'train_f1': train_f,
+                       'dev_f1': dev_f})
+
+    plt.plot('epochs', 'train_f1', data=df, color='blue', linewidth=2)
+    plt.plot('epochs', 'dev_f1', data=df, color='green', linewidth=2)
+    plt.legend()
+    plt.tight_layout()
+    plt.pause(100)
+    plt.close()
+
+    print("Перевіримо якість моделі на тестовому наборі даних. Завантажимо кращу зі збережених моделей.\n")
+
+    tagger = BiLSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, VOCAB_SIZE+2, NUM_CLASSES)
+    tagger.load_state_dict(torch.load(OUTPUT_PATH))
+    tagger.to(device)
+
+    print("Виконаємо перевірку.\n")
+
+    labels = list(label2id.keys())[1:]
+    label_idxs = list(label2id.values())[1:]
+
+    test(tagger, test_loader, BATCH_SIZE,
+         labels=label_idxs, target_names=labels)
+
+
+print("END OF SCRIPT\n ")
