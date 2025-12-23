@@ -241,3 +241,7 @@ best_model_resnet.pth
 # ------------NLP---------------------
 /topic_10_word_embeddings/homework10/Reviews.csv
 /topic_10_word_embeddings/homework10/spam.csv
+
+#-------------RNN_GRU_LSTM----------------
+/topic_11_RNN_GRU_LSTM/conll003-englishversion/
+/topic_11_RNN_GRU_LSTM/tmp/
