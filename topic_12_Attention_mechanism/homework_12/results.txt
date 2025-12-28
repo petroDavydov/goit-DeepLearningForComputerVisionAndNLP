@@ -1,0 +1,62 @@
+=== Результати навчання Seq2Seq (PL→EN) ===
+
+Epoch 1/10
+	Train Loss: 3.704
+	Valid Loss: 5.861
+	Best Valid Loss (so far): 5.861
+
+Epoch 2/10
+	Train Loss: 3.119
+	Valid Loss: 5.907
+	Best Valid Loss (so far): 5.861
+
+Epoch 3/10
+	Train Loss: 2.738
+	Valid Loss: 6.083
+	Best Valid Loss (so far): 5.861
+
+Epoch 4/10
+	Train Loss: 2.469
+	Valid Loss: 6.128
+	Best Valid Loss (so far): 5.861
+
+Epoch 5/10
+	Train Loss: 2.204
+	Valid Loss: 6.212
+	Best Valid Loss (so far): 5.861
+
+Epoch 6/10
+	Train Loss: 2.009
+	Valid Loss: 6.304
+	Best Valid Loss (so far): 5.861
+
+Epoch 7/10
+	Train Loss: 1.808
+	Valid Loss: 6.457
+	Best Valid Loss (so far): 5.861
+
+Epoch 8/10
+	Train Loss: 1.647
+	Valid Loss: 6.548
+	Best Valid Loss (so far): 5.861
+
+Epoch 9/10
+	Train Loss: 1.491
+	Valid Loss: 6.702
+	Best Valid Loss (so far): 5.861
+
+Epoch 10/10
+	Train Loss: 1.353
+	Valid Loss: 6.733
+	Best Valid Loss (so far): 5.861
+
+Train Losses:
+3.7044, 3.1188, 2.7380, 2.4695, 2.2043, 2.0086, 1.8081, 1.6469, 1.4913, 1.3532
+
+Valid Losses:
+5.8607, 5.9066, 6.0835, 6.1277, 6.2122, 6.3036, 6.4565, 6.5481, 6.7018, 6.7329
+
+Test Loss: 5.7209
+Test Perplexity: 305.1684
+
+Графіки збережені у папку 'graphs/'

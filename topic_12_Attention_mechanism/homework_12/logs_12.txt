@@ -1,0 +1,295 @@
+python ./homework_12.py
+Train size: 504928
+Valid size: 63116
+Test size: 63116
+{'en': 'Mysterious murders and beatings only serve to further reinforce the impression that Russia is a lawless country.', 'pl': 'Tajemnicze zabójstwa i pobicia tylko potęgują wrażenie rosyjskiego bezprawia.'}
+Map: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████| 10000/10000 [05:04<00:00, 32.86 examples/s] 
+Map: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████| 2000/2000 [00:54<00:00, 36.91 examples/s] 
+Map:                                                                             |████████████████████████████████████████████████████████████████████████████████████████████████████████████| 2000/2000 [00:59<00:00, 33.44 examples/s]
+Train size: 10000
+Valid size: 2000
+Test size: 2000
+
+{'en': 'Mysterious murders and beatings only serve to further reinforce the impression that Russia is a lawless country.', 'pl': 'Tajemnicze zabójstwa i pobicia tylko potęgują wrażenie rosyjskiego bezprawia.'}
+EN tokens: ['<sos>', 'mysterious', 'murders', 'and', 'beatings', 'only', 'serve', 'to', 'further', 'reinforce', 'the', 'impression', 'that', 'russia', 'is', 'a', 'lawless', 'country', '.', '<eos>']
+PL tokens: ['<sos>', 'tajemnicze', 'zabójstwa', 'i', 'pobicia', 'tylko', 'potęgują', 'wrażenie', 'rosyjskiego', 'bezprawia', '.', '<eos>']
+UNK index: 0
+PAD index: 1
+Index of 'the' in EN vocab: 13
+EN vocab size: 7024
+PL vocab size: 12783
+Map: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████| 10000/10000 [00:02<00:00, 4729.55 examples/s]
+Map: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████| 2000/2000 [00:00<00:00, 5658.84 examples/s]
+Map: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████| 2000/2000 [00:00<00:00, 5791.54 examples/s]
+{'en': 'Mysterious murders and beatings only serve to further reinforce the impression that Russia is a lawless country.', 'pl': 'Tajemnicze zabójstwa i pobicia tylko potęgują wrażenie rosyjskiego bezprawia.'}
+EN tokens: ['<sos>', 'mysterious', 'murders', 'and', 'beatings', 'only', 'serve', 'to', 'further', 'reinforce', 'the', 'impression', 'that', 'russia', 'is', 'a', 'lawless', 'country', '.', '<eos>']
+EN ids: [2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 0, 19, 20, 3]
+PL tokens: ['<sos>', 'tajemnicze', 'zabójstwa', 'i', 'pobicia', 'tylko', 'potęgują', 'wrażenie', 'rosyjskiego', 'bezprawia', '.', '<eos>']
+PL ids: [2, 0, 4, 5, 0, 6, 0, 7, 8, 9, 10, 3]
+Map: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████| 10000/10000 [00:02<00:00, 4284.34 examples/s]
+Map: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████| 2000/2000 [00:00<00:00, 3744.97 examples/s]
+Map: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████| 2000/2000 [00:00<00:00, 4176.38 examples/s]
+Translation: {'en': 'Mysterious murders and beatings only serve to further reinforce the impression that Russia is a lawless country.', 'pl': 'Tajemnicze zabójstwa i pobicia tylko potęgują wrażenie rosyjskiego bezprawia.'}
+EN tokens: ['<sos>', 'mysterious', 'murders', 'and', 'beatings', 'only', 'serve', 'to', 'further', 'reinforce', 'the', 'impression', 'that', 'russia', 'is', 'a', 'lawless', 'country', '.', '<eos>']
+EN ids: [2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 0, 19, 20, 3]
+PL tokens: ['<sos>', 'tajemnicze', 'zabójstwa', 'i', 'pobicia', 'tylko', 'potęgują', 'wrażenie', 'rosyjskiego', 'bezprawia', '.', '<eos>']
+PL ids: [2, 0, 4, 5, 0, 6, 0, 7, 8, 9, 10, 3]
+Dataset({
+    features: ['translation', 'en_tokens', 'pl_tokens', 'en_ids', 'pl_ids'],
+    num_rows: 10000
+})
+Приклад: {'en_ids': tensor([ 2,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18,  0, 19,
+        20,  3]), 'pl_ids': tensor([ 2,  0,  4,  5,  0,  6,  0,  7,  8,  9, 10,  3]), 'translation': {'en': 'Mysterious murders and beatings only serve to further reinforce the impression that Russia is a lawless country.', 'pl': 'Tajemnicze zabójstwa i pobicia tylko potęgują wrażenie rosyjskiego bezprawia.'}, 'en_tokens': ['<sos>', 'mysterious', 'murders', 'and', 'beatings', 'only', 'serve', 'to', 'further', 'reinforce', 'the', 'impression', 'that', 'russia', 'is', 'a', 'lawless', 'country', '.', '<eos>'], 'pl_tokens': ['<sos>', 'tajemnicze', 'zabójstwa', 'i', 'pobicia', 'tylko', 'potęgują', 'wrażenie', 'rosyjskiego', 'bezprawia', '.', '<eos>']}
+EN ids: tensor([ 2,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18,  0, 19,
+        20,  3])
+PL ids: tensor([ 2,  0,  4,  5,  0,  6,  0,  7,  8,  9, 10,  3])
+EN ids shape: torch.Size([64, 32])
+PL ids shape: torch.Size([54, 32])
+Другий батч EN ids shape: torch.Size([49, 32])
+Другий батч PL ids shape: torch.Size([46, 32])ф
+Seq2Seq(
+  (encoder): Encoder(
+    (embedding): Embedding(7024, 256, padding_idx=1)
+    (rnn): GRU(256, 512, bidirectional=True)
+    (fc): Linear(in_features=1024, out_features=512, bias=True)
+    (dropout): Dropout(p=0.1, inplace=False)
+  )
+  (decoder): Decoder(
+    (attention): Attention(
+      (attn_fc): Linear(in_features=1536, out_features=512, bias=True)
+      (v_fc): Linear(in_features=512, out_features=1, bias=False)
+    )
+    (embedding): Embedding(12783, 256, padding_idx=1)
+    (rnn): GRU(1280, 512)
+    (fc_out): Linear(in_features=1792, out_features=12783, bias=True)
+    (dropout): Dropout(p=0.1, inplace=False)
+  )
+)
+
+Training: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 313/313 [01:43<00:00,  3.03it/s] 
+Evaluating: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 63/63 [00:05<00:00, 12.44it/s] 
+Epoch 1/10
+        Train Loss: 6.834
+        Valid Loss: 6.373
+        Best Valid Loss: 6.373
+Training: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 313/313 [01:38<00:00,  3.17it/s] 
+Evaluating: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 63/63 [00:05<00:00, 11.42it/s]
+Epoch 2/10
+        Train Loss: 6.146
+        Valid Loss: 6.170
+        Best Valid Loss: 6.170
+Training: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 313/313 [01:42<00:00,  3.04it/s]
+Evaluating: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 63/63 [00:05<00:00, 11.05it/s]
+Epoch 3/10
+        Train Loss: 5.699
+        Valid Loss: 6.028
+        Best Valid Loss: 6.028
+Training: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 313/313 [01:32<00:00,  3.37it/s]
+Evaluating: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 63/63 [00:05<00:00, 10.95it/s]
+Epoch 4/10
+        Train Loss: 5.156
+        Valid Loss: 5.787
+        Best Valid Loss: 5.787
+Training: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 313/313 [01:47<00:00,  2.92it/s]
+Evaluating: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 63/63 [00:06<00:00, 10.45it/s]
+        Train Loss: 4.510
+        Valid Loss: 5.732
+        Best Valid Loss: 5.732
+Training: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 313/313 [01:48<00:00,  2.89it/s]
+Evaluating: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 63/63 [00:05<00:00, 10.88it/s]
+Epoch 6/10
+        Train Loss: 3.808
+        Valid Loss: 5.858
+        Best Valid Loss: 5.732
+Epoch 7/10
+        Train Loss: 3.140
+        Valid Loss: 5.956
+        Best Valid Loss: 5.732
+Training: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 313/313 [02:11<00:00,  2.38it/s] 
+Evaluating: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 63/63 [00:06<00:00, 10.39it/s] 
+Epoch 8/10
+        Train Loss: 2.720
+        Valid Loss: 5.994
+        Best Valid Loss: 5.732
+Training: |█████████████████████████████████████████████████████████████████████████████████████████████████████████▌ 
+Evaluating: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 63/63 [00:06<00:00,  9.87it/s]
+Epoch 9/10
+        Train Loss: 2.417
+        Valid Loss: 6.139
+        Best Valid Loss: 5.732
+Training: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 313/313 [01:55<00:00,  2.72it/s] 
+Evaluating: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 63/63 [00:06<00:00,  9.18it/s] 
+Epoch 10/10
+        Train Loss: 2.158
+        Valid Loss: 6.215
+        Best Valid Loss: 5.732
+Evaluating: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 63/63 [00:06<00:00, 10.18it/s]
+| Test Loss: 5.721 | Test PPL: 305.168 |
+
+---
+English: The EU and its Member States must transform the verbose declarations reaffirming their commitments into harmonised and collectively effective action.    
+Expected Polish: UE i jej państwa członkowskie powinni przekształcić rozwlekłe oświadczenie potwierdzające ich zaangażowanie w zharmonizowane i prawdziwie wspólne działanie.
+Predicted translation: <sos> ue i państwa członkowskie muszą być <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> i <unk> i <unk> . <eos>
+Source tokens: ['<sos>', 'the', 'eu', 'and', 'its', 'member', 'states', 'must', 'transform', 'the', 'verbose', 'declarations', 'reaffirming', 'their', 'commitments', 'into', 'harmonised', 'and', 'collectively', 'effective', 'action', '.', '<eos>']
+Example 1
+English: The EU and its Member States must transform the verbose declarations reaffirming their commitments into harmonised and collectively effective action.
+Expected Polish: UE i jej państwa członkowskie powinni przekształcić rozwlekłe oświadczenie potwierdzające ich zaangażowanie w zharmonizowane i prawdziwie wspólne działanie.
+Predicted Polish: <sos> ue i państwa członkowskie muszą być <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> <unk> i <unk> i <unk> . <eos>
+------------------------------------------------------------
+Example 2
+English: Generally speaking, fluctuating exchange rates are not a good thing.
+Expected Polish: Przede wszystkim płynne kursy walutowe nie są dobrym pomysłem.
+Predicted Polish: <sos> <unk> , <unk> <unk> nie <unk> nie <unk> nie <unk> nie <unk> . <eos>
+------------------------------------------------------------
+Example 3
+English: This is why I believe that we must implement and consider ambitious ideas and not be afraid to come up with and propose such ideas.
+Expected Polish: Dlatego uważam, że musimy wdrażać i rozważać ambitne koncepcje, nie bojąc się ich przedstawiać i proponować.
+Predicted Polish: <sos> dlatego właśnie uważam , że musimy musimy pokazać i i i i i i nie i i <unk> i <unk> . <eos>
+------------------------------------------------------------
+Example 4
+English: Unresolved conflicts have become the sore point in the Black Sea region.
+Expected Polish: Nierozwiązane konflikty stanowią drażliwą kwestię w regionie Morza Czarnego.
+Predicted Polish: <sos> stworzono sąd <unk> <unk> <unk> <unk> w regionie regionie . <eos>
+------------------------------------------------------------
+Example 5
+English: The European Investment Bank is very active in this process.
+Expected Polish: Europejski Bank Inwestycyjny wykazuje dużą aktywność w tym procesie.
+Predicted Polish: <sos> europejski europejski jest jest ważny jest w procesie procesie . <eos>
+------------------------------------------------------------
+Example 6
+English: Every point in the Hungarian Presidency's programme sets these basic values as goals.
+Expected Polish: Każdemu punktowi programu węgierskiej prezydencji przyświecają jako cele te właśnie podstawowe wartości.
+Predicted Polish: <sos> w w <unk> z <unk> <unk> z <unk> , które <unk> cele . <eos>
+------------------------------------------------------------
+Example 7
+English: To this end, all European Private Companies could have their registered office in one country and their real activities in another.
+Expected Polish: W związku z tym wszystkie europejskie spółki prywatne mogą mieć siedzibę statutową w jednym państwie, a faktyczną działalność prowadzić w innym. 
+Predicted Polish: <sos> w tym względu na celu <unk> <unk> może być <unk> w <unk> i <unk> i <unk> w . <eos>
+------------------------------------------------------------
+Example 8
+English: However, together with the Council and the Commission, Parliament has laid the foundation for an effective representative organisation that will truly be able to represent Europe and European values and interests around the world.
+Expected Polish: Rada, Komisja i Parlament położyły jednak podwaliny pod efektywną organizację reprezentującą UE, która rzeczywiście będzie reprezentować Europę oraz europejskie wartości i interesy w świecie.
+Predicted Polish: <sos> jednak jednak parlament i rada i parlament europejski będzie <unk> <unk> <unk> , , , że <unk> <unk> i i europy , a i europy
+------------------------------------------------------------
+Example 9
+English: EU industry is entirely dependent on imports of rare earth elements from China, which has a virtual monopoly in this area, since it controls 97% of global production.
+Expected Polish: Przemysł UE jest całkowicie zależny od importu metali ziem rzadkich z Chin, które posiadają w tej dziedzinie wirtualny monopol, gdyż kontrolują 97 % światowej produkcji.
+Predicted Polish: <sos> ue jest <unk> <unk> <unk> <unk> z <unk> <unk> , z innymi <unk> , , , w tym , że w tym , że w
+------------------------------------------------------------
+Example 10
+English: Therefore I would like to bring to your attention the mounting evidence of a deteriorating financial situation for farmers.
+Expected Polish: Chcę zatem zwrócić waszą uwagę na coraz wyraźniejsze dowody pogorszenia sytuacji finansowej rolników.
+Predicted Polish: <sos> dlatego chciałbym zwrócić uwagę na <unk> <unk> <unk> dla rolników dla rolników . <eos>
+
+
+Training: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 313/313 [01:45<00:00,  2.96it/s] 
+Evaluating: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 63/63 [00:06<00:00,  9.57it/s] 
+Training: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 313/313 [01:48<00:00,  2.88it/s] 
+Evaluating: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 63/63 [00:06<00:00,  9.63it/s] 
+Training: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 313/313 [01:51<00:00,  2.82it/s] 
+Evaluating: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 63/63 [00:06<00:00, 10.35it/s] 
+Training: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 313/313 [01:52<00:00,  2.79it/s] 
+Evaluating: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 63/63 [00:06<00:00,  9.98it/s] 
+Training: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 313/313 [01:53<00:00,  2.76it/s] 
+Evaluating: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 63/63 [00:06<00:00, 10.06it/s] 
+Training: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 313/313 [01:55<00:00,  2.70it/s] 
+Evaluating: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 63/63 [00:06<00:00,  9.36it/s]
+Training: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 313/313 [01:58<00:00,  2.65it/s]
+Evaluating: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 63/63 [00:07<00:00,  8.58it/s]
+Training: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 313/313 [02:00<00:00,  2.60it/s]
+Evaluating: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 63/63 [00:06<00:00,  9.43it/s]
+Training: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 313/313 [02:01<00:00,  2.58it/s] 
+Evaluating: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 63/63 [00:07<00:00,  8.30it/s]
+Training: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 313/313 [01:59<00:00,  2.61it/s] 
+Evaluating: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 63/63 [00:07<00:00,  8.52it/s] 
+Example 1
+English: The EU and its Member States must transform the verbose declarations reaffirming their commitments into harmonised and collectively effective action.
+Expected Polish: UE i jej państwa członkowskie powinni przekształcić rozwlekłe oświadczenie potwierdzające ich zaangażowanie w zharmonizowane i prawdziwie wspólne działanie.
+Predicted Polish: <sos> unia oraz państwa członkowskie musi zapewnić <unk> <unk> <unk> w ich zobowiązania i ich działania . <eos>
+Example 2
+English: Generally speaking, fluctuating exchange rates are not a good thing.
+Expected Polish: Przede wszystkim płynne kursy walutowe nie są dobrym pomysłem.
+Predicted Polish: <sos> <unk> , , <unk> <unk> między <unk> są nie są dobrą . <eos>
+Example 3
+English: This is why I believe that we must implement and consider ambitious ideas and not be afraid to come up with and propose such ideas.
+Expected Polish: Dlatego uważam, że musimy wdrażać i rozważać ambitne koncepcje, nie bojąc się ich przedstawiać i proponować.
+Predicted Polish: <sos> właśnie uważam uważam , że musimy osiągnąć i znaleźć sposób i i nie <unk> się je <unk> , a nie <unk> te <unk> . <eos>
+Example 4
+English: Unresolved conflicts have become the sore point in the Black Sea region.
+Expected Polish: Nierozwiązane konflikty stanowią drażliwą kwestię w regionie Morza Czarnego.
+Predicted Polish: <sos> <unk> centrum zawsze jest <unk> <unk> w w regionie . <eos>
+Example 5
+English: The European Investment Bank is very active in this process.
+Expected Polish: Europejski Bank Inwestycyjny wykazuje dużą aktywność w tym procesie.
+Predicted Polish: <sos> europejski inwestycje w europie jest bardzo szczegółowej procesu . <eos>
+Example 6
+English: Every point in the Hungarian Presidency's programme sets these basic values as goals.
+Expected Polish: Każdemu punktowi programu węgierskiej prezydencji przyświecają jako cele te właśnie podstawowe wartości.
+Predicted Polish: <sos> zgodnie z <unk> prezydencji <unk> temat te te te cele , jak te cele . <eos>
+Example 7
+English: To this end, all European Private Companies could have their registered office in one country and their real activities in another.
+Expected Polish: W związku z tym wszystkie europejskie spółki prywatne mogą mieć siedzibę statutową w jednym państwie, a faktyczną działalność prowadzić w innym. 
+Predicted Polish: <sos> w tym celu zagwarantowania europejskiego europejskiego przedsiębiorstw bez swoimi <unk> , kraju i i i ich do nim w nim . <eos>
+Example 8
+English: However, together with the Council and the Commission, Parliament has laid the foundation for an effective representative organisation that will truly be able to represent Europe and European values and interests around the world.
+Expected Polish: Rada, Komisja i Parlament położyły jednak podwaliny pod efektywną organizację reprezentującą UE, która rzeczywiście będzie reprezentować Europę oraz europejskie wartości i interesy w świecie.
+Predicted Polish: <sos> jednak z zadowoleniem przyjmuje rada i komisja parlament będzie <unk> dla dla dla dla rządu będzie będzie mieć europę i i i i na dobrobyt 
+Example 9
+English: EU industry is entirely dependent on imports of rare earth elements from China, which has a virtual monopoly in this area, since it controls 97% of global production.
+Expected Polish: Przemysł UE jest całkowicie zależny od importu metali ziem rzadkich z Chin, które posiadają w tej dziedzinie wirtualny monopol, gdyż kontrolują 97 % światowej produkcji.
+Predicted Polish: <sos> przemysł ue jest jest od od od <unk> z z z <unk> , , która jest <unk> <unk> w tym , a to zaledwie 40
+Example 10
+English: Therefore I would like to bring to your attention the mounting evidence of a deteriorating financial situation for farmers.
+Expected Polish: Chcę zatem zwrócić waszą uwagę na coraz wyraźniejsze dowody pogorszenia sytuacji finansowej rolników.
+Predicted Polish: <sos> dlatego chciałabym zwrócić państwa uwagę na <unk> wypłaty wyjścia dla sytuacji transferu sytuacji . <eos>
+----
+Example 6300
+English: Is it not time to rationalise and bring some sense to this situation and cut adrift some of the contrived political correctness that is driving it?
+Expected Polish: Czy nie nadeszła pora na racjonalizację i zdroworozsądkowe podejście do sytuacji, czy nie pora ograniczyć trochę tę naciąganą poprawność polityczną, która napędza tę sytuację?
+Predicted Polish: <sos> czy nie jest teraz <unk> i i inni , żeby w tej sytuacji i <unk> się z <unk> na <unk> , jaki jest to ?
+
+Example 10532
+English: If we are to expect results from our children we must provide our teachers with exemplary training.
+Expected Polish: Jeżeli mamy oczekiwać rezultatów od naszych dzieci, musimy zapewnić naszym nauczycielom przykładne szkolenie.
+Predicted Polish: <sos> jeśli my , że musimy się z naszych naszych , musimy zadbać naszą dostawy z <unk> . <eos>
+
+-----
+Example 14010
+English: A prosperous European industry is obviously crucial for achieving the Lisbon goals.
+Expected Polish: Dobrze prosperujący europejski przemysł stanowi ewidentnie klucz do osiągnięcia celów lizbońskich.
+Predicted Polish: <sos> <unk> on forma europejskiej jest jest dla realizacji realizacji celów . <eos>
+
+-----
+
+Example 22563
+English: It is also intended to increase competitiveness and improve the quality of life of the EU's citizens.
+Expected Polish: Ma ona za zadanie zwiększenie konkurencyjności i poprawienie jakości życia obywateli UE.
+Predicted Polish: <sos> 40 również również zwiększyć konkurencyjność i poprawy jakości obywateli obywateli ue . <eos>
+
+----------
+
+Example 63115
+English: These issues need to be reassessed in the light of the experience we have gained in recent years.
+Expected Polish: Trzeba dokonać ponownej oceny tych zagadnień w świetle doświadczeń wyniesionych w ostatnich latach.
+Predicted Polish: <sos> omawiane kwestie muszą być <unk> <unk> w <unk> z którymi się w latach . <eos>
+Example 63116
+English: The issue of the financial instrument has become part of the interinstitutional struggle which has been going on for a year now.
+Expected Polish: Kwestia instrumentu finansowego stała się przedmiotem międzyinstytucjonalnych zmagań, które trwają już od niemal roku.
+Predicted Polish: <sos> kwestia element finansowej finansowej był <unk> część z o o 2006 r . <eos>
+[nltk_data] Downloading package wordnet to
+[nltk_data]     C:\Users\Admin\AppData\Roaming\nltk_data...
+[nltk_data]   Package wordnet is already up-to-date!
+[nltk_data] Downloading package punkt_tab to
+[nltk_data]     C:\Users\Admin\AppData\Roaming\nltk_data...
+[nltk_data]   Package punkt_tab is already up-to-date!
+[nltk_data] Downloading package omw-1.4 to
+[nltk_data]     C:\Users\Admin\AppData\Roaming\nltk_data...
+[nltk_data]   Package omw-1.4 is already up-to-date!
+METEOR: 0.2126
+preds_len: 63116 refs_len: 63116
+preds_sample: ['unia oraz państwa członkowskie musi zapewnić <unk> <unk> <unk> w ich zobowiązania i ich działania .', '<unk> , , <unk> <unk> między <unk> są nie są dobrą .', 'właśnie uważam uważam , że musimy osiągnąć i znaleźć sposób i i nie <unk> się je <unk> , a nie <unk> te <unk> .']
+refs_sample: [['UE i jej państwa członkowskie powinni przekształcić rozwlekłe oświadczenie potwierdzające ich zaangażowanie w zharmonizowane i prawdziwie wspólne działanie.'], ['Przede wszystkim płynne kursy walutowe nie są dobrym pomysłem.'], ['Dlatego uważam, że musimy wdrażać i rozważać ambitne koncepcje, nie bojąc się ich przedstawiać i proponować.']]
+preds_len: 63116 refs_len: 63116
+preds_sample: ['unia oraz państwa członkowskie musi zapewnić <unk> <unk> <unk> w ich zobowiązania i ich działania .', '<unk> , , <unk> <unk> między <unk> są nie są dobrą .', 'właśnie uważam uważam , że musimy osiągnąć i znaleźć sposób i i nie <unk> się je <unk> , a nie <unk> te <unk> .']
+refs_sample: [['UE i jej państwa członkowskie powinni przekształcić rozwlekłe oświadczenie potwierdzające ich zaangażowanie w zharmonizowane i prawdziwie wspólne działanie.'], ['Przede wszystkim płynne kursy walutowe nie są dobrym pomysłem.'], ['Dlatego uważam, że musimy wdrażać i rozważać ambitne koncepcje, nie bojąc się ich przedstawiać i proponować.']]
+Done. Результати збережені у results.txt

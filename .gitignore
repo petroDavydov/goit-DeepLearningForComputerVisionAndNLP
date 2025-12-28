@@ -245,3 +245,9 @@ best_model_resnet.pth
 #-------------RNN_GRU_LSTM----------------
 /topic_11_RNN_GRU_LSTM/conll003-englishversion/
 /topic_11_RNN_GRU_LSTM/tmp/
+# ---------TOPIC_12---------------------
+/topic_12_Attention_mechanism/homework_12/graphs/
+/topic_12_Attention_mechanism/homework_12/saved_models
+/topic_12_Attention_mechanism/homework_12/results_in_docx.docx
+
+/topic_12_Attention_mechanism/homework_12_1/
